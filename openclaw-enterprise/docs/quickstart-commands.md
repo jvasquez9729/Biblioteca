@@ -1,0 +1,103 @@
+# Quickstart: comandos exactos (paso a paso)
+
+> Ejecuta estos comandos desde la raíz del repositorio (`/workspace/Biblioteca`).
+
+## 0) Entrar al proyecto y validar prerequisitos
+```bash
+cd /workspace/Biblioteca
+which docker
+which psql
+```
+
+## 1) Levantar base local (PostgreSQL + pgvector) y crear esquemas/tablas
+```bash
+bash openclaw-enterprise/scripts/bootstrap.sh
+```
+
+Si prefieres manual, usa:
+```bash
+docker compose -f openclaw-enterprise/infra/docker-compose.yml up -d
+export PGPASSWORD="openclaw_dev"
+psql -h 127.0.0.1 -U openclaw -d openclaw -f openclaw-enterprise/sql/001_memory_schemas.sql
+psql -h 127.0.0.1 -U openclaw -d openclaw -f openclaw-enterprise/sql/002_audit_ledger.sql
+```
+
+## 2) Configurar conexión de memoria para OpenClaw
+```bash
+export OPENCLAW_DB_URL="postgresql://openclaw:openclaw_dev@127.0.0.1:5432/openclaw"
+```
+
+Si quieres dejarlo persistente en tu shell:
+```bash
+echo 'export OPENCLAW_DB_URL="postgresql://openclaw:openclaw_dev@127.0.0.1:5432/openclaw"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+## 3) Verificar que control plane y políticas estén en su lugar
+```bash
+python -m json.tool openclaw-enterprise/control-plane/openclaw.json >/dev/null && echo "openclaw.json OK"
+rg -n "human_in_the_loop_required|approval_command|policy_file|workflow_file" openclaw-enterprise/control-plane/openclaw.json
+rg -n "requires_human_approval_for|denied_tools|allowed_tools" openclaw-enterprise/policies/agent_capabilities.yaml
+```
+
+## 4) Validar workflow obligatorio de 7 estados
+```bash
+rg -n "workflow_name|initial_state|HITL_WAIT|irreversible_actions_require_hitl" openclaw-enterprise/workflows/state_machine.yaml
+```
+
+## 5) Prueba rápida de escritura de auditoría (ledger)
+```bash
+export PGPASSWORD="openclaw_dev"
+psql -h 127.0.0.1 -U openclaw -d openclaw -c "\
+insert into mem_audit.execution_ledger \
+(execution_id,agent_id,model_id,state,input_hash,output_hash,prev_event_hash,event_hash,token_in,token_out,cost_usd,status) \
+values ('exec-demo-001','chief_of_staff','claude-opus-4.6','VALIDATION','in_hash','out_hash',null,'event_hash_1',120,300,0.12,'approved');"
+
+psql -h 127.0.0.1 -U openclaw -d openclaw -c "select execution_id, agent_id, state, status, created_at from mem_audit.execution_ledger order by event_id desc limit 5;"
+```
+
+## 6) Flujo recomendado Release 1 (finanzas + auditoría)
+
+### 6.1 Cargar datos financieros (staging)
+```bash
+# Ejemplo CSV de entrada (ajusta ruta real)
+mkdir -p data/finance
+cp /ruta/a/tus_estados/*.csv data/finance/
+```
+
+### 6.2 Ejecutar parsing/análisis con tu runtime OpenClaw
+```bash
+# Comando referencial: reemplaza por tu ejecutor real
+# openclaw run --config openclaw-enterprise/control-plane/openclaw.json --task "Procesar estados financieros Q1"
+```
+
+### 6.3 Forzar pausa HITL antes de acción irreversible
+```bash
+# Comando referencial en chat/control channel
+/approve
+```
+
+## 7) Comprobaciones de salud (post-bootstrap)
+```bash
+docker ps --filter "name=openclaw-postgres"
+psql -h 127.0.0.1 -U openclaw -d openclaw -c "select schema_name from information_schema.schemata where schema_name like 'mem_%' order by schema_name;"
+psql -h 127.0.0.1 -U openclaw -d openclaw -c "\dt mem_audit.*"
+```
+
+## 8) Apagar entorno local
+```bash
+docker compose -f openclaw-enterprise/infra/docker-compose.yml down
+```
+
+## 9) Verificar agentes especializados nuevos
+```bash
+rg -n "backend_agent|frontend_agent|database_agent|n8n_automation_agent" openclaw-enterprise/policies/agent_capabilities.yaml
+rg -n "Frontend Agent Prompt|Backend Agent Prompt|Database Agent Prompt|n8n Automation Agent Prompt" openclaw-enterprise/prompts/*.md
+```
+
+## 10) Recomendación de orquestación para producción
+```bash
+# Revisa el enfoque recomendado LangGraph + LangChain
+cat openclaw-enterprise/docs/architecture.md
+cat openclaw-enterprise/docs/production-readiness.md
+```
