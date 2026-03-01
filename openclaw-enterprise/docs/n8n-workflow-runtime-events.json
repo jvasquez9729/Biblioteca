@@ -1,0 +1,126 @@
+{
+  "name": "runtime-status-notify",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "runtime-events",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "Webhook_Runtime_Events",
+      "name": "Webhook Runtime Events",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        260,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"event_type\"]}}",
+              "operation": "equal",
+              "value2": "execution.done"
+            }
+          ]
+        }
+      },
+      "id": "If_Execution_Done",
+      "name": "If Execution Done",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        520,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "message",
+              "value": "={{\"OpenClaw DONE | exec=\" + $json[\"execution_id\"] + \" | cost=\" + $json[\"cost_usd\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Message",
+      "name": "Set Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        760,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_CHAT_ID}}",
+        "text": "={{$json[\"message\"]}}",
+        "additionalFields": {}
+      },
+      "id": "Telegram_Send",
+      "name": "Telegram Send",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        220
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Runtime Events": {
+      "main": [
+        [
+          {
+            "node": "If Execution Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Execution Done": {
+      "main": [
+        [
+          {
+            "node": "Set Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Set Message": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "runtime-events-v1",
+  "pinData": {}
+}
+

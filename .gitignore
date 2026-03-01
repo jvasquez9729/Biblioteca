@@ -1,0 +1,17 @@
+# Archivos locales / no versionados
+Skills/
+*.docx
+*.docx
+*.pbix
+*.ipynb
+
+# Secretos
+.env
+.env.*
+*.age
+*.key
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
