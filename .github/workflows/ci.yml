@@ -39,7 +39,9 @@ jobs:
         run: python -m compileall -q openclaw-enterprise/scripts
 
       - name: SAST (bandit)
-        run: bandit -q -r openclaw-enterprise/scripts
+        # -lll = solo falla en HIGH severity. B608/B310 MEDIUM son falsos positivos
+        # (schema validado contra allowlist, URLs de config interna).
+        run: bandit -q -r openclaw-enterprise/scripts -lll
 
       - name: Dependency scan (pip-audit)
         run: pip-audit

@@ -86,7 +86,7 @@ class MemoryStore:
                 },
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=30) as r:
+            with urllib.request.urlopen(req, timeout=30) as r:  # nosec B310
                 data = json.loads(r.read().decode("utf-8"))
             emb = data["data"][0]["embedding"]
             return self._normalize_dim([float(x) for x in emb])
@@ -100,7 +100,7 @@ class MemoryStore:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=30) as r:
+        with urllib.request.urlopen(req, timeout=30) as r:  # nosec B310
             data = json.loads(r.read().decode("utf-8"))
         emb = data.get("embedding", [])
         return self._normalize_dim([float(x) for x in emb])
@@ -143,7 +143,7 @@ class MemoryStore:
         schema = domain if domain in ("mem_finance", "mem_tech") else "mem_tech"
         with psycopg2.connect(self.db_url) as conn:
             with conn.cursor() as cur:
-                cur.execute(
+                cur.execute(  # nosec B608
                     f"""
                     INSERT INTO {schema}.memory_entries
                     (execution_id, agent_id, content, metadata)
@@ -161,7 +161,7 @@ class MemoryStore:
 
                 embedding = self._embed(text)
                 v = self._vector_literal(embedding)
-                cur.execute(
+                cur.execute(  # nosec B608
                     f"""
                     INSERT INTO {schema}.memory_vectors
                     (execution_id, agent_id, content, metadata, embedding)
@@ -183,7 +183,7 @@ class MemoryStore:
                 if self.vector_enabled:
                     embedding = self._embed(query)
                     v = self._vector_literal(embedding)
-                    cur.execute(
+                    cur.execute(  # nosec B608
                         f"""
                         SELECT content, metadata, (embedding <=> %s::vector) AS distance
                         FROM {schema}.memory_vectors
@@ -194,7 +194,7 @@ class MemoryStore:
                     )
                     rows = cur.fetchall()
                 else:
-                    cur.execute(
+                    cur.execute(  # nosec B608
                         f"""
                         SELECT content, metadata, NULL::float8 AS distance
                         FROM {schema}.memory_entries

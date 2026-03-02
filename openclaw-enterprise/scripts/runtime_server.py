@@ -148,7 +148,7 @@ def _notify_n8n(event_type: str, state: ExecutionState) -> None:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=10):
+        with urllib.request.urlopen(req, timeout=10):  # nosec B310
             pass
     except Exception:
         # No bloquear flujo principal por fallo de notificacion.
