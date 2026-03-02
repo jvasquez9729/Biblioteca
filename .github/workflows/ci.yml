@@ -5,10 +5,12 @@ on:
     branches: ["main", "master"]
     paths:
       - "openclaw-enterprise/**"
+      - ".github/workflows/**"
   pull_request:
     branches: ["main", "master"]
     paths:
       - "openclaw-enterprise/**"
+      - ".github/workflows/**"
 
 jobs:
   lint-test-security:
