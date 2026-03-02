@@ -6,7 +6,6 @@ import os
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import urlparse
 
 import psycopg2
 
